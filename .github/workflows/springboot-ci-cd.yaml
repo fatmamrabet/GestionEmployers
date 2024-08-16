@@ -24,6 +24,11 @@ jobs:
     
     - name: Run tests
       run: mvn test
+      env:
+        DB_HOST: "localhost"
+        DB_PORT: "3306"
+        DB_USERNAME: "root"
+        DB_PASSWORD: "password"
 
     - name: Build Docker image
       run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:1.0 .
