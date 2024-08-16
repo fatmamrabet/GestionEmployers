@@ -27,8 +27,8 @@ jobs:
       env:
         DB_HOST: "localhost"
         DB_PORT: "3306"
-        DB_USERNAME: "root"
-        DB_PASSWORD: "password"
+        DB_USERNAME: "testuser"
+        DB_PASSWORD: "testuser@123"
 
     - name: Build Docker image
       run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:1.0 .
