@@ -1,4 +1,4 @@
-name: CI/CD Spring Boot
+name: CI/CD with ArgoCD
 
 on:
   push:
@@ -20,20 +20,35 @@ jobs:
         java-version: '11'
 
     - name: Build with Maven
-      run: mvn clean package -DskipTests
+      run: mvn clean install
 
     - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:1.0 .
+      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:${{ github.sha }} .
 
     - name: Login to DockerHub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
     - name: Push Docker image
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:1.0
+      run: docker push ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:${{ github.sha }}
 
-    - name: Update Kubernetes Deployment
+    - name: Checkout manifests repository
+      uses: actions/checkout@v2
+      with:
+        repository: fatmamrabet/repo-kubernetes-configs  # Remplace par le chemin de ton dépôt
+        path: manifests
+        token: ${{ secrets.PAT_GITHUB }}
+
+    - name: Update Kubernetes manifests
       run: |
-        kubectl set image deployment/spring-deployment spring-container=${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:1.0 --record
-        kubectl rollout status deployment/spring-deployment
+        sed -i 's#image: .*$#image: '"${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:${{ github.sha }}"'#g' manifests/deployment-springboot.yaml
+
+    - name: Commit and push changes
+      run: |
+        cd manifests
+        git config --global user.email "fatma.mrabet@esprit.tn"  # Remplace par ton email
+        git config --global user.name "fatmamrabet"  # Remplace par ton nom
+        git add .
+        git commit -m "Update image to ${{ github.sha }}"
+        git push https://fatmamrabet:${{ secrets.PAT_GITHUB }}@github.com/fatmamrabet/repo-kubernetes-configs.git HEAD:main
       env:
-        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
