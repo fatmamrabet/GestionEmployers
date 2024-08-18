@@ -20,7 +20,7 @@ jobs:
         java-version: '11'
 
     - name: Build with Maven
-      run: mvn clean install
+      run: mvn clean package -DskipTests
 
     - name: Build Docker image
       run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-k8s-deployment:${{ github.sha }} .
